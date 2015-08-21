@@ -1,8 +1,11 @@
 var MY_TYPE = "A";
 var IP_GROUP = 1;
 var URL_GROUP = 2;
+var LINK_VALUE = 1;
+var PREV_LINK_VALUE = 3;
+var N_LEV = 2;
 
-//var width = 960,
+// var width = 960,
 //    height = 500;
 
 var width = $(window).width();
@@ -29,6 +32,7 @@ var parsedData = {"nodes":[],"links":[]};
 
 
 
+
 //create nodes and links:
 //From...
 
@@ -45,16 +49,82 @@ var parsedData = {"nodes":[],"links":[]};
 //          {"name":"somewebsite.verizonwireless.com.","group":URL_GROUP}]
 //"links":[{"source":1,"target":0,"value":1},...]}
 
+//util
+// var isNewIP = function(ip) {
+//     for (var i = 0, len = parsedData.nodes.length; i < len; i++) {
+//         if (parsedData.nodes[i].value === ip) {
+//           console.log("duplicate ip: "+ip);
+//           return false;
+//         }
+//     }
+//     return true; // The object was not found
+// }
+
+
+var findIPID = function(ip) {
+    for (var i = 0, len = parsedData.nodes.length; i < len; i++) {
+        if (parsedData.nodes[i].name === ip) {
+            return parsedData.nodes[i].id; // Return id as soon as the object is found
+        }
+    }
+    return null; // The object was not found
+}
+
+var findNodeIndexByID = function(searchID) {
+    for (var i = 0, len = parsedData.nodes.length; i < len; i++) {
+        if (parsedData.nodes[i].id === searchID) {
+            return i; // Return i as soon as the object is found
+        }
+    }
+    return null; // The object was not found
+}
+
+var previousIPNodeIndex = -1;
+var previousURLNodeIndex = -1;
+
+
 $.each(dns_records, function( index, dnsEntry ) {
   if(dnsEntry.type==MY_TYPE) {
-    //create a new ipNode
-    // dnsEntry.
+    var isNewIPNode = false;
+    
+    //URLs are unique. Make a node for each entry
+    var urlNodeIndex = parsedData.nodes.push({"name":dnsEntry.name
+                                              ,"group":URL_GROUP
+                                              ,"id":"url"+index});
+    
+    //IPs may be duplicates. Check against existing nodes
+    var existingIPID = findIPID(dnsEntry.value);
+    if(existingIPID===null) {
+      ipNodeIndex = parsedData.nodes.push({"name":dnsEntry.value
+                                          ,"group":IP_GROUP
+                                          ,"id":"ip"+index});
+      existingIPID="ip"+index;
+    }
+
+    //create a link from the url node to its ip node
+    parsedData.links.push({"source":findNodeIndexByID("url"+index)
+                          ,"target":findNodeIndexByID(existingIPID)
+                          ,"value":LINK_VALUE});
   }
 });
 
+//now go through nodes, adding edges with values based on levenshtein difference
+//create edges for the N_LEV nearest nodes of its kind.
+
+// $.each(parsedData.nodes, function( index, node ) {
+//   for (var i = 0, len = parsedData.nodes.length; i < len; i++) {
+//       scores[i] = levenshtein(node.name, parsedData.nodes[i].name);
+//     }
+//   scores.sort();
+//   //add a link for the smallest two non-zero scores.
+
+// });
+
+console.log(parsedData);
+
 
  
-graph = mis; //loaded js with script tag in index.html
+graph = parsedData; //loaded js with script tag in index.html
 
 //d3 stuffs
 force
@@ -89,7 +159,7 @@ force.on("tick", function() {
       .attr("cy", function(d) { return d.y; });
 });
 
-
+//external json loading...
 // d3.json("miserables.json", function(error, graph) {
 //   if (error) throw error;
 
