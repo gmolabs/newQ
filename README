@@ -1,0 +1,7 @@
+Qadium Infovis Challenge
+------------------------
+Author: Geoffrey Morris
+Email: geoffm@gmail.com
+Abstract: A visualization of DNS records as a force-directed graph with collapsible nodes, implemented with d3.
+
+We would like to gain insight into the question: "Do similar IP addresses map to similar URLs?"
