@@ -4,7 +4,7 @@ var URL_GROUP = 2;
 var LINK_VALUE = 1;
 var PREV_LINK_VALUE = 3;
 var N_LEV = 2;
-
+var N_ENTRIES = 50;
 // var width = 960,
 //    height = 500;
 
@@ -28,6 +28,8 @@ var dnsNodes,
     dnsLinks;
 
 var parsedData = {"nodes":[],"links":[]};
+
+var nEntries = 0;
 
 
 
@@ -79,12 +81,9 @@ var findNodeIndexByID = function(searchID) {
     return null; // The object was not found
 }
 
-var previousIPNodeIndex = -1;
-var previousURLNodeIndex = -1;
-
 
 $.each(dns_records, function( index, dnsEntry ) {
-  if(dnsEntry.type==MY_TYPE) {
+  if(dnsEntry.type==MY_TYPE&&nEntries<N_ENTRIES) {
     var isNewIPNode = false;
     
     //URLs are unique. Make a node for each entry
@@ -105,6 +104,8 @@ $.each(dns_records, function( index, dnsEntry ) {
     parsedData.links.push({"source":findNodeIndexByID("url"+index)
                           ,"target":findNodeIndexByID(existingIPID)
                           ,"value":LINK_VALUE});
+
+    nEntries++;
   }
 });
 
