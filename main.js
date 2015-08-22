@@ -4,6 +4,8 @@ var URL_GROUP = 5;
 var LINK_VALUE = 1;
 var PREV_LINK_VALUE = 3;
 var N_LEV = 2;
+var LEV_STRENGTH_FACTOR = 2;
+var MIN_LEV = 30;
 var N_ENTRIES = 50;
 // var width = 960,
 //    height = 500;
@@ -117,7 +119,7 @@ $.each(parsedData.nodes, function( index, node ) {
   var nextNode = null;
   for (var i = 0, len = parsedData.nodes.length; i < len; i++) {
       score = levenshtein(node.name, parsedData.nodes[i].name);
-      if(score<lowScore&&score>0&&score<5) {
+      if(score<lowScore&&score>0&&score<MIN_LEV) {
         lowScore = score;
         nextNode = parsedData.nodes[i];
         parsedData.links.push({"source":findNodeIndexByID(node.id)
