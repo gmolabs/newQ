@@ -1,6 +1,6 @@
 var MY_TYPE = "A";
 var IP_GROUP = 1;
-var URL_GROUP = 2;
+var URL_GROUP = 5;
 var LINK_VALUE = 1;
 var PREV_LINK_VALUE = 3;
 var N_LEV = 2;
@@ -112,14 +112,25 @@ $.each(dns_records, function( index, dnsEntry ) {
 //now go through nodes, adding edges with values based on levenshtein difference
 //create edges for the N_LEV nearest nodes of its kind.
 
-// $.each(parsedData.nodes, function( index, node ) {
-//   for (var i = 0, len = parsedData.nodes.length; i < len; i++) {
-//       scores[i] = levenshtein(node.name, parsedData.nodes[i].name);
-//     }
-//   scores.sort();
-//   //add a link for the smallest two non-zero scores.
+$.each(parsedData.nodes, function( index, node ) {
+  var lowScore = 100000;
+  var nextNode = null;
+  for (var i = 0, len = parsedData.nodes.length; i < len; i++) {
+      score = levenshtein(node.name, parsedData.nodes[i].name);
+      if(score<lowScore&&score>0&&score<5) {
+        lowScore = score;
+        nextNode = parsedData.nodes[i];
+        parsedData.links.push({"source":findNodeIndexByID(node.id)
+                          ,"target":findNodeIndexByID(nextNode.id)
+                          ,"value":0});
+      }
+    }
+    //create a link from the  node to its nearest neighbor
+    
+    
+  //add a link for the smallest two non-zero scores.
 
-// });
+});
 
 console.log(parsedData);
 
