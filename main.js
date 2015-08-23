@@ -7,22 +7,13 @@ var N_LEV = 2;
 var LEV_STRENGTH_FACTOR = 2;
 var MIN_LEV = 5;
 var N_ENTRIES = 50;
-var LEV_LINK_SIZE = 0;
+var LEV_LINK_SIZE = 1;
 var NODE_SIZE = 5;
 var RANGE_START = 3000;
 // var width = 960,
 //    height = 500;
 
 
-//dat.GUI tho
-var gui = new dat.GUI();
-var config = {
-  "nRecs" : N_ENTRIES,
-  "showLev" : false
-}
-// gui.add(gui, "showLev");
-gui.add(config, "nRecs").min(1).max(50).step(1);
-gui.add(config, "showLev");
 
 
 var timeout;
@@ -184,8 +175,9 @@ $.each(parsedData.nodes, function( index, node ) {
         nextNode = parsedData.nodes[i];
         parsedData.links.push({"source":findNodeIndexByID(node.id)
                           ,"target":findNodeIndexByID(nextNode.id)
-                          ,"value":LEV_LINK_SIZE
-                          ,"linkLength":score*5});
+                          ,"value":5/score
+                          ,"linkLength":score*5
+                          ,"type":"lev"});
       }
     }
     //create a link from the  node to its nearest neighbor
@@ -210,8 +202,16 @@ force
 var link = svg.selectAll(".link")
     .data(graph.links)
   .enter().append("line")
-    .attr("class", "link")
+    .attr("class", function(d) {
+      if(d.type=="lev") {
+        //console.log("lev link hidden");
+        return "lev link hidden";
+      } else {
+        return "link";
+      }
+    })
     .attr("linkLength", function(d) { return d.linkLength; })
+    .attr("type", function(d) { return d.type; })
     .style("stroke-width", function(d) { return Math.sqrt(d.value); });
 
 
@@ -323,3 +323,22 @@ force.on("tick", function() {
 
 // // Listen to changes outside the GUI - GUI will update when changed from outside
 // gui.add(gui, "nRecs").listen();
+
+
+//dat.GUI tho
+var gui = new dat.GUI();
+var config = {
+  "nRecs" : N_ENTRIES,
+  "showLev" : false
+}
+// gui.add(gui, "showLev");
+gui.add(config, "nRecs").min(1).max(50).step(1);
+var levController = gui.add(config, "showLev");
+
+levController.onChange(function(value) {
+  d3.selectAll(".lev")
+  .classed("hidden", function (d, i) {
+    return !d3.select(this).classed("hidden");
+  });
+  
+});
