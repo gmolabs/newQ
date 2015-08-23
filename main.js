@@ -1,14 +1,32 @@
 var MY_TYPE = "A";
 var IP_GROUP = 1;
 var URL_GROUP = 5;
-var LINK_VALUE = 1;
+var LINK_VALUE = 10;
 var PREV_LINK_VALUE = 3;
 var N_LEV = 2;
 var LEV_STRENGTH_FACTOR = 2;
 var MIN_LEV = 5;
 var N_ENTRIES = 50;
+var LEV_LINK_SIZE = 0;
+var NODE_SIZE = 5;
+var RANGE_START = 3000;
 // var width = 960,
 //    height = 500;
+
+
+//dat.GUI tho
+var gui = new dat.GUI();
+var config = {
+  "nRecs" : N_ENTRIES,
+  "showLev" : false
+}
+// gui.add(gui, "showLev");
+gui.add(config, "nRecs").min(1).max(50).step(1);
+gui.add(config, "showLev");
+
+
+var timeout;
+
 
 var width = $(window).width();
     height = $(window).height();
@@ -17,12 +35,24 @@ var color = d3.scale.category20();
 
 var force = d3.layout.force()
     .charge(-120)
-    .linkDistance(30)
+    .linkDistance(function(d) { 
+        return d.linkLength;
+     })
     .size([width, height]);
+
+//use d3 titles
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([-10, 0])
+  .html(function(d) {
+    return d.name;
+  });
+
 
 var svg = d3.select("body").append("svg")
     .attr("width", width)
-    .attr("height", height);
+    .attr("height", height)
+    .call(tip);
 
 var dnsNodes,
     ipNodes,
@@ -32,6 +62,14 @@ var dnsNodes,
 var parsedData = {"nodes":[],"links":[]};
 
 var nEntries = 0;
+
+//mouse tracking util
+var down = false;
+$(document).mousedown(function() {
+    down = true;
+}).mouseup(function() {
+    down = false;  
+});
 
 
 
@@ -67,7 +105,7 @@ var nEntries = 0;
 
 var findIPID = function(ip) {
     for (var i = 0, len = parsedData.nodes.length; i < len; i++) {
-        if (parsedData.nodes[i].name === ip) {
+        if (parsedData.nodes[i].name == ip) {
             return parsedData.nodes[i].id; // Return id as soon as the object is found
         }
     }
@@ -76,40 +114,62 @@ var findIPID = function(ip) {
 
 var findNodeIndexByID = function(searchID) {
     for (var i = 0, len = parsedData.nodes.length; i < len; i++) {
-        if (parsedData.nodes[i].id === searchID) {
+        if (parsedData.nodes[i].id == searchID) {
             return i; // Return i as soon as the object is found
         }
     }
     return null; // The object was not found
 }
 
+//filter to "A" type
+function typeA(value) {
+  return value.type == "A";
+}
 
-$.each(dns_records, function( index, dnsEntry ) {
+dns_records = dns_records.filter(typeA);
+console.log(dns_records);
+
+//$.each(dns_records, function( index, dnsEntry ) {
+for (var index=RANGE_START;index<RANGE_START+N_ENTRIES; index++) {
+  dnsEntry = dns_records[index];
   if(dnsEntry.type==MY_TYPE&&nEntries<N_ENTRIES) {
-    var isNewIPNode = false;
+    // var isNewIPNode = false;
+    var existingURLID = findIPID(dnsEntry.name);
+    if(existingURLID===null) {
+      var urlNodeIndex = parsedData.nodes.push({"name":dnsEntry.name
+                                                ,"group":URL_GROUP
+                                                ,"id":"url"+index
+                                                ,"mySize":NODE_SIZE});
+      existingURLID="url"+index;
+
+    } else {
+      console.log("duplicate url;");
+      var oldsize = parsedData.nodes[findNodeIndexByID(existingURLID)].mySize;
+      parsedData.nodes[findNodeIndexByID(existingURLID)].mySize = newsize = oldsize + NODE_SIZE/2;
+    }
     
-    //URLs are unique. Make a node for each entry
-    var urlNodeIndex = parsedData.nodes.push({"name":dnsEntry.name
-                                              ,"group":URL_GROUP
-                                              ,"id":"url"+index});
-    
-    //IPs may be duplicates. Check against existing nodes
     var existingIPID = findIPID(dnsEntry.value);
     if(existingIPID===null) {
       ipNodeIndex = parsedData.nodes.push({"name":dnsEntry.value
                                           ,"group":IP_GROUP
-                                          ,"id":"ip"+index});
+                                          ,"id":"ip"+index
+                                          ,"mySize": NODE_SIZE});
       existingIPID="ip"+index;
+    } else {
+      console.log("duplicate ip");
+      var oldsize = parsedData.nodes[findNodeIndexById(existingIPID)].mySize;
+      parsedData.nodes[findNodeIndexById(existingIPID)].mySize = oldsize + NODE_SIZE/2;
     }
 
     //create a link from the url node to its ip node
-    parsedData.links.push({"source":findNodeIndexByID("url"+index)
+    parsedData.links.push({"source":findNodeIndexByID(existingURLID)
                           ,"target":findNodeIndexByID(existingIPID)
-                          ,"value":LINK_VALUE});
+                          ,"value":LINK_VALUE
+                          ,"linkLength":3});
 
     nEntries++;
   }
-});
+};
 
 //now go through nodes, adding edges with values based on levenshtein difference
 //create edges for the N_LEV nearest nodes of its kind.
@@ -124,7 +184,8 @@ $.each(parsedData.nodes, function( index, node ) {
         nextNode = parsedData.nodes[i];
         parsedData.links.push({"source":findNodeIndexByID(node.id)
                           ,"target":findNodeIndexByID(nextNode.id)
-                          ,"value":0});
+                          ,"value":LEV_LINK_SIZE
+                          ,"linkLength":score*5});
       }
     }
     //create a link from the  node to its nearest neighbor
@@ -134,7 +195,7 @@ $.each(parsedData.nodes, function( index, node ) {
 
 });
 
-console.log(parsedData);
+//console.log(parsedData);
 
 
  
@@ -150,18 +211,42 @@ var link = svg.selectAll(".link")
     .data(graph.links)
   .enter().append("line")
     .attr("class", "link")
+    .attr("linkLength", function(d) { return d.linkLength; })
     .style("stroke-width", function(d) { return Math.sqrt(d.value); });
+
 
 var node = svg.selectAll(".node")
     .data(graph.nodes)
   .enter().append("circle")
     .attr("class", "node")
-    .attr("r", 5)
+    .attr("r", function(d) {return d.mySize;})
+    .attr("x", 0)
+    .attr("y", 0)
+    .attr("name", function(d) {return d.name;})
     .style("fill", function(d) { return color(d.group); })
-    .call(force.drag);
+    .call(force.drag)
+    .on('mouseout', tip.hide)
+    .on('mousedown', tip.hide)
+    .on('mouseup', tip.hide)
+    .on('mouseover', function(d) {
+      if(!down) {
+        var context = this;
+        var args = [].slice.call(arguments);
+        args.push(this);
+        clearTimeout(timeout);
+        timeout = setTimeout(function() {
+          tip.show.apply(context, args);
+        }, 150);
+      }
+    });
 
-node.append("title")
-    .text(function(d) { return d.name; });
+//append name as title
+// node.append("title")
+//     .text(function(d) { return d.name; });
+
+
+
+//init force
 
 force.on("tick", function() {
   link.attr("x1", function(d) { return d.source.x; })
@@ -209,3 +294,32 @@ force.on("tick", function() {
 //         .attr("cy", function(d) { return d.y; });
 //   });
 // });
+
+//fisheye
+
+// var fisheye = d3.fisheye.circular()
+//     .radius(200)
+//     .distortion(2);
+
+// svg.on("mousemove", function() {
+//   fisheye.focus(d3.mouse(this));
+
+//   node.each(function(d) { d.fisheye = fisheye(d); })
+//       .attr("cx", function(d) { return d.fisheye.x; })
+//       .attr("cy", function(d) { return d.fisheye.y; })
+//       .attr("r", function(d) { return d.fisheye.z * 4.5; });
+
+//   link.attr("x1", function(d) { return d.source.fisheye.x; })
+//       .attr("y1", function(d) { return d.source.fisheye.y; })
+//       .attr("x2", function(d) { return d.target.fisheye.x; })
+//       .attr("y2", function(d) { return d.target.fisheye.y; });
+// });
+
+
+// // Listen to changes within the GUI
+// gui.add(gui, "nRecs").onChange(function(newValue) {
+//   console.log("Value changed to:  ", newValue);
+// });
+
+// // Listen to changes outside the GUI - GUI will update when changed from outside
+// gui.add(gui, "nRecs").listen();
