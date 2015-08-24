@@ -5,3 +5,5 @@ Email: geoffm@gmail.com
 Abstract: A visualization of DNS records as a force-directed graph with collapsible nodes, implemented with d3.
 
 We would like to gain insight into the question: "Do similar IP addresses map to similar URLs?"
+
+The force directed graph allows us to cluster linked urls and ips based on Levenshtien distance. We see clusters of similar urls linked to clusters of similar ips.
