@@ -38,18 +38,18 @@ var levController = gui.add(config, "show similarity links");
 
 nRecsController.onFinishChange(function(value) {
   N_ENTRIES = value;
-  parse(dns_records);
+  parse();
 });
 
 startAtController.onFinishChange(function(value) {
   RANGE_START = value;
-  parse(dns_records);
+  parse();
 });
 
 
 clusterynessController.onFinishChange(function(value) {
   MIN_LEV = value;
-  parse(dns_records);
+  parse();
 });
 
 
@@ -95,10 +95,10 @@ var svg = d3.select("#force-container").append("svg")
     .call(tip);
 
 
-var svg2 = d3.select("#matrix-container").append("svg")
-    .attr("width", width)
-    .attr("height", height);
-    // .call(tip);
+// var svg2 = d3.select("#matrix-container").append("svg")
+//     .attr("width", width)
+//     .attr("height", height);
+//     // .call(tip);
 
 svg.append("g").attr("class", "links");
 svg.append("g").attr("class", "nodes");
@@ -175,8 +175,8 @@ function parse() {
   var urlNodeIndex = null;
   var ipNodeIndex = null;
   //empty out the old data //?
-  parsedData.nodes = [];
-  parsedData.links = [];
+  parsedData.nodes.length=0;
+  parsedData.links.length=0;
   // parsedData.links.length=0;
   //console.log("parsing: "+myRecs);
   //console.log("parsing nEntries: "+N_ENTRIES);
@@ -262,6 +262,13 @@ function compareBySource(a, b) {
     return 1;
   return 0;
 }
+function compareByTarget(a, b) {
+  if (a.target > b.target)
+    return -1;
+  if (a.target < b.target)
+    return 1;
+  return 0;
+}
 
 
 function start() {
@@ -282,12 +289,12 @@ function start() {
 
 
   
-  var link = svg.select(".links").selectAll("line.link")
+  var link = svg.select(".links").selectAll(".link")
     .data(parsedData.links);
 
-    link.enter().insert("svg:line", "g.node")
+    link.enter().insert("line", "g.node")
       .attr("class", function(d) {
-        console.log("link type: "+d.type);
+        //console.log("link type: "+d.type);
         if(d.type=="lev") {
           // console.log("lev link hidden");
           return "link lev hidden";
@@ -300,7 +307,7 @@ function start() {
       .style("stroke-width", function(d) { return Math.sqrt(d.value); });
     link.exit().remove();
 
-  console.log(link);
+  //console.log(link);
 
   var node = svg.select(".nodes").selectAll("circle.node")
     .data(parsedData.nodes);
@@ -376,12 +383,12 @@ function start() {
             }
           }
         }
-        neighborPairs.sort(compareBySource);
-        console.log(neighborPairs);
+        neighborPairs.sort(compareByTarget);
+        //console.log(neighborPairs);
         for(var i=0;i<neighborPairs.length;i++) {
           myPair = neighborPairs[i];
-            $("#selectedNeighborNames").append(myPair.source+"<br><br>");
-            $("#neighborFriendNames").append(myPair.target+"<br><br>");
+            $("#selectedNeighborNames").append(myPair.source+"<br>");
+            $("#neighborFriendNames").append(myPair.target+"<br>");
         }
 
       }
