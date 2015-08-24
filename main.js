@@ -141,6 +141,11 @@ var findNodeIndexByID = function(searchID) {
     return null; // The object was not found
 }
 
+var findNodeNameByID = function(searchID) {
+  // console.log("found node named: "+parsedData.nodes[findNodeIndexByID(searchID)].name);
+  return parsedData.nodes[findNodeIndexByID(searchID)].name;
+}
+
 //filter to "A" type
 function typeA(value) {
   return value.type == "A";
@@ -170,8 +175,8 @@ function parse() {
   var urlNodeIndex = null;
   var ipNodeIndex = null;
   //empty out the old data //?
-  parsedData.nodes.splice(0, parsedData.nodes.length);
-  parsedData.links.splice(0, parsedData.links.length);
+  parsedData.nodes = [];
+  parsedData.links = [];
   // parsedData.links.length=0;
   //console.log("parsing: "+myRecs);
   //console.log("parsing nEntries: "+N_ENTRIES);
@@ -250,6 +255,14 @@ function compareByName(a, b) {
   return 0;
 }
 
+function compareBySource(a, b) {
+  if (a.source < b.source)
+    return -1;
+  if (a.name > b.name)
+    return 1;
+  return 0;
+}
+
 
 function start() {
   //graph = parsedData; //loaded js with script tag in index.html
@@ -274,8 +287,9 @@ function start() {
 
     link.enter().insert("svg:line", "g.node")
       .attr("class", function(d) {
+        console.log("link type: "+d.type);
         if(d.type=="lev") {
-          //console.log("lev link hidden");
+          // console.log("lev link hidden");
           return "link lev hidden";
         } else {
           return "link";
@@ -300,6 +314,7 @@ function start() {
     .style("fill", function(d) { return color(d.group); });
 
     node.call(force.drag);
+
     
     node.on('mouseout', tip.hide);
     node.on('mousedown', tip.hide);
@@ -313,10 +328,66 @@ function start() {
         timeout = setTimeout(function() {
           tip.show.apply(context, args);
         }, 150);
-        // var otherContext = 
+        //console.log(d.id);
+        $("#selectedName").text(d.name);
+        var linkedNodeNames = [];
+        for(var i=0; i<parsedData.links.length; i++) {
+          if(parsedData.links[i].type=="direct") {
+            if(parsedData.links[i].source.id==d.id) {
+              linkedNodeNames.push(findNodeNameByID(parsedData.links[i].target.id));
+            } else if (parsedData.links[i].target.id==d.id) {
+              linkedNodeNames.push(findNodeNameByID(parsedData.links[i].source.id));
+            }
+          }
+        }
+
+        $("#friendName").html(linkedNodeNames.toString().split(",").join("<br>"));
+        // console.log(linkedNodeNames.toString().split(",").join(", "));
+
+        var neighborPairs = [];
+
+        $("#selectedNeighborNames").text("");
+        $("#neighborFriendNames").text("");
+        for(var i=0; i<parsedData.links.length; i++) {
+          if(parsedData.links[i].type=="lev") {
+            if(parsedData.links[i].target.id==d.id) {
+              //neighbor pair part 1
+              var myId = parsedData.links[i].source.id;
+              //$("#selectedNeighborNames").append(findNodeNameByID(myId)+"<br>");
+              //find that node's direct link
+              for(var j=0; j<parsedData.links.length; j++) {
+                if(parsedData.links[j].type=="direct") {
+                  if(parsedData.links[j].source.id==myId) {
+                    var targetId = parsedData.links[j].target.id;
+                    //$("#neighborFriendNames").append(findNodeNameByID(targetId)+"<br>");
+                    neighborPairs.push({"source":findNodeNameByID(myId), "target":findNodeNameByID(targetId)})
+                  } else if(parsedData.links[j].target.id==myId) {
+                    var sourceId = parsedData.links[j].source.id;
+                    // $("#neighborFriendNames").append(findNodeNameByID(parsedData.links[j].source.id)+"<br>");
+                    neighborPairs.push({"source":findNodeNameByID(myId), "target":findNodeNameByID(sourceId)})
+                  }
+                }
+              }
+              //     } else if (parsedData.links[j].target.id==parsedData.links[i].target.id) {
+              //       //$("#neighborFriendNames").append(findNodeNameByID(parsedData.links[j].target.id));
+              //     }
+              //   }
+              // }
+            }
+          }
+        }
+        neighborPairs.sort(compareBySource);
+        console.log(neighborPairs);
+        for(var i=0;i<neighborPairs.length;i++) {
+          myPair = neighborPairs[i];
+            $("#selectedNeighborNames").append(myPair.source+"<br><br>");
+            $("#neighborFriendNames").append(myPair.target+"<br><br>");
+        }
 
       }
     });
+
+
 
     node.exit().remove();
 
@@ -344,3 +415,5 @@ function start() {
 }
 
 parse();
+
+$("dc main a").append('<div id="info"><div id="selectedName"></div><hr><h3>Nearest Neigbors</h3><table id="neighbors"></table></div>');

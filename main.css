@@ -1,5 +1,33 @@
+hr {
+	padding-right: 25%;
+}
+
+#selectedName, #friendName, #selectedNeighborNames, #neighborFriendNames {
+	float: left;
+	width: 50%;
+	height: 60px;
+	color: #333;
+	line-height: 18px;
+}
+
+#selectedNeighborNames, #neighborFriendNames {
+	color: #999;
+}
+
+#info {
+	position: absolute;
+	top: 0;
+	left: 10px;
+	width: 40%;
+	font-family: Roboto, Helvetica, sans;
+	font-size: 12px;
+	padding: 3px;
+	margin-top: 3px;
+}
+
 #matrix-container, #force-container {
 	border: "1px solid #ccc";
+	position: fixed;
 }
 
 .node {
@@ -20,6 +48,7 @@
   background: rgba(0, 0, 0, 0.8);
   color: #fff;
   border-radius: 2px;
+  position: absolute;
 }
 
 /* Creates a small triangle extender for the tooltip */
