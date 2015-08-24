@@ -10,16 +10,10 @@ var N_ENTRIES = 50;
 var LEV_LINK_SIZE = 1;
 var NODE_SIZE = 5;
 var RANGE_START = 0;
-// var width = 960,
-//    height = 500;
 
-//filter data
+//filter data down to type "A"
 dns_records = dns_records.filter(typeA);
 nData = dns_records.length;
-
-//for adjacency
-var myNodes;
-
 
 //dat.GUI tho
 var gui = new dat.GUI();
@@ -30,11 +24,23 @@ var config = {
   "clusteryness" : MIN_LEV,
   "show similarity links" : false
 }
-// gui.add(gui, "showLev");
+
+var levController = gui.add(config, "show similarity links");
+
+levController.onFinishChange(function(value) {
+  if(value) {
+    d3.selectAll(".lev")
+    .classed("hidden", false);
+  } else {
+    d3.selectAll(".lev")
+    .classed("hidden", true);
+  } 
+});
+
+//Controls for variable node display...disabled until dynamic nodes fixed
 //var nRecsController = gui.add(config, "# of IPs").min(1).max(50).step(1);
 //var startAtController = gui.add(config, "start at").min(0).max(nData-50).step(1);
 //var clusterynessController = gui.add(config, "clusteryness").min(0).max(30).step(1);
-var levController = gui.add(config, "show similarity links");
 
 // nRecsController.onFinishChange(function(value) {
 //   N_ENTRIES = value;
@@ -53,26 +59,14 @@ var levController = gui.add(config, "show similarity links");
 // });
 
 
-levController.onFinishChange(function(value) {
-  if(value) {
-    d3.selectAll(".lev")
-    .classed("hidden", false);
-  } else {
-    d3.selectAll(".lev")
-    .classed("hidden", true);
-  } 
-});
 
 
 
 var timeout;
-
-
 var width = $(window).width();
     height = $(window).height();
 
 var color = d3.scale.category20();
-
 var force = d3.layout.force()
     .charge(-120)
     .linkDistance(function(d) { 
@@ -88,18 +82,15 @@ var tip = d3.tip()
     return d.name;
   });
 
-
+//instantiate d3 svg
 var svg = d3.select("#force-container").append("svg")
     .attr("width", width)
     .attr("height", height)
     .call(tip);
 
 
-// var svg2 = d3.select("#matrix-container").append("svg")
-//     .attr("width", width)
-//     .attr("height", height);
-//     // .call(tip);
 
+//bifurcate into link and node layer
 svg.append("g").attr("class", "links");
 svg.append("g").attr("class", "nodes");
 
@@ -110,7 +101,6 @@ var dnsNodes,
     dnsLinks;
 
 var parsedData = {"nodes":[],"links":[]};
-
 var nEntries = 0;
 
 //mouse tracking util
@@ -122,7 +112,7 @@ $(document).mousedown(function() {
 });
 
 
-
+//some utils
 var findIPID = function(ip) {
     for (var i = 0, len = parsedData.nodes.length; i < len; i++) {
         if (parsedData.nodes[i].name == ip) {
@@ -163,30 +153,26 @@ function urlsOnly(value) {
   return value.group==URL_GROUP;
 }
 
-//console.log(dns_records);
-
-
+//parse json, pushing edges, ip. and url nodes into the d3 format
 
 function parse() {
-  var oldData = parsedData;
+  //empty out the old data if it exists
   existingURLID = null;
   existingIPID = null;
   nEntries = 0;
   var urlNodeIndex = null;
   var ipNodeIndex = null;
-  //empty out the old data //?
   parsedData.nodes.length=0;
   parsedData.links.length=0;
-  // parsedData.links.length=0;
-  //console.log("parsing: "+myRecs);
-  //console.log("parsing nEntries: "+N_ENTRIES);
-  //$.each(dns_records, function( index, dnsEntry ) {
+ 
+  //go through the entries, up to the desired limit.  
+  //we already filtered the dns_records down to "A" type
   for (var index=RANGE_START;index<RANGE_START+N_ENTRIES; index++) {
     dnsEntry = dns_records[index];
     if(dnsEntry.type==MY_TYPE&&nEntries<N_ENTRIES) {
       var existingURLID = findIPID(dnsEntry.name);
       if(existingURLID===null) {
-
+        //push a new node
         var urlNodeIndex = parsedData.nodes.push({"name":dnsEntry.name
                                                   ,"group":URL_GROUP
                                                   ,"id":"url"+index
@@ -194,7 +180,7 @@ function parse() {
         existingURLID="url"+index;
 
       } else {
-        //console.log("duplicate url;");
+        //make the existing node phatter
         var oldsize = parsedData.nodes[findNodeIndexByID(existingURLID)].mySize;
         parsedData.nodes[findNodeIndexByID(existingURLID)].mySize = newsize = oldsize + NODE_SIZE/2;
       }
@@ -242,7 +228,7 @@ function parse() {
       }
   });
 
-
+  //start initiates the force layout with this fantastic data
   start();
 
 }
@@ -272,31 +258,15 @@ function compareByTarget(a, b) {
 
 
 function start() {
-  //graph = parsedData; //loaded js with script tag in index.html
-  // console.log(graph);
-
-//or don't
-  //do adjacency matrix
-  // var myIPs = parsedData.nodes.filter(ipsOnly);
-  // myIPs = myIPs.sort(compareByName);
-  // console.log(myIPs);
-  // var myURLs = parsedData.nodes.filter(urlsOnly);
-  // myURLs = myURLs.sort(compareByName);
-  // myURLs.reverse();
-  // console.log(myURLs);
-  // var myLinks = parsedData.links.filter(directLinks);
-
-
-
-  
+  //create links in the svg, bind to data
   var link = svg.select(".links").selectAll(".link")
     .data(parsedData.links);
 
+    //init link svg
     link.enter().insert("line", "g.node")
       .attr("class", function(d) {
-        //console.log("link type: "+d.type);
+        //if a relatedness link, add hidden class
         if(d.type=="lev") {
-          // console.log("lev link hidden");
           return "link lev hidden";
         } else {
           return "link";
@@ -307,11 +277,11 @@ function start() {
       .style("stroke-width", function(d) { return Math.sqrt(d.value); });
     link.exit().remove();
 
-  //console.log(link);
-
+  //create nodes in svg, bind to data
   var node = svg.select(".nodes").selectAll("circle.node")
     .data(parsedData.nodes);
 
+    //init node svg
     node.enter().append("circle")
     .attr("class", "node")
     .attr("r", function(d) {return d.mySize;})
@@ -320,13 +290,19 @@ function start() {
     .attr("name", function(d) {return d.name;})
     .style("fill", function(d) { return color(d.group); });
 
+    //remove svg when the data is removed
+    node.exit().remove();
+
+    //use the force
     node.call(force.drag);
 
-    
+    //mouse interaction
     node.on('mouseout', tip.hide);
     node.on('mousedown', tip.hide);
     node.on('mouseup', tip.hide);
     node.on('mouseover', function(d) {
+      //add tooltip and create text view of the selected node, its direct link, 
+      //its nearest neighbors, and thier direct links.
       if(!down) {
         var context = this;
         var args = [].slice.call(arguments);
@@ -349,10 +325,8 @@ function start() {
         }
 
         $("#friendName").html(linkedNodeNames.toString().split(",").join("<br>"));
-        // console.log(linkedNodeNames.toString().split(",").join(", "));
-
         var neighborPairs = [];
-
+        //clear out old data
         $("#selectedNeighborNames").text("");
         $("#neighborFriendNames").text("");
         for(var i=0; i<parsedData.links.length; i++) {
@@ -360,7 +334,6 @@ function start() {
             if(parsedData.links[i].target.id==d.id) {
               //neighbor pair part 1
               var myId = parsedData.links[i].source.id;
-              //$("#selectedNeighborNames").append(findNodeNameByID(myId)+"<br>");
               //find that node's direct link
               for(var j=0; j<parsedData.links.length; j++) {
                 if(parsedData.links[j].type=="direct") {
@@ -375,39 +348,28 @@ function start() {
                   }
                 }
               }
-              //     } else if (parsedData.links[j].target.id==parsedData.links[i].target.id) {
-              //       //$("#neighborFriendNames").append(findNodeNameByID(parsedData.links[j].target.id));
-              //     }
-              //   }
-              // }
             }
           }
         }
+        //sort alphabetically by left hand side
         neighborPairs.sort(compareByTarget);
-        //console.log(neighborPairs);
         for(var i=0;i<neighborPairs.length;i++) {
           myPair = neighborPairs[i];
-            $("#selectedNeighborNames").append(myPair.source+"<br>");
-            $("#neighborFriendNames").append(myPair.target+"<br>");
+          //add to dom
+          $("#selectedNeighborNames").append(myPair.source+"<br>");
+          $("#neighborFriendNames").append(myPair.target+"<br>");
         }
 
       }
     });
 
-
-
-    node.exit().remove();
-
-    //console.log(node);
-
   //init force
-
   force
       .nodes(parsedData.nodes)
       .links(parsedData.links)
-      // .resume()
       .start();
 
+  //animation
   force.on("tick", function() {
     link.attr("x1", function(d) { return d.source.x; })
         .attr("y1", function(d) { return d.source.y; })
@@ -422,5 +384,3 @@ function start() {
 }
 
 parse();
-
-$("dc main a").append('<div id="info"><div id="selectedName"></div><hr><h3>Nearest Neigbors</h3><table id="neighbors"></table></div>');
