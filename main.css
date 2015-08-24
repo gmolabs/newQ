@@ -2,6 +2,11 @@ hr {
 	padding-right: 25%;
 }
 
+
+#selectedName, #friendName {
+	height: 60px;
+}
+
 #selectedName, #friendName, #selectedNeighborNames, #neighborFriendNames {
 	float: left;
 	width: 40%;

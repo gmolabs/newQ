@@ -2,15 +2,14 @@ Qadium Infovis Challenge
 ------------------------
 Author: Geoffrey Morris
 Email: geoffm@gmail.com
-Abstract: A visualization of DNS records as a force-directed graph, implemented with d3.
+------------------------
+
+A visualization of DNS records as a force-directed graph, implemented with d3.
 
 We would like to gain insight into the question: "Do similar IP addresses map to similar URLs?"
 
-The force directed graph allows us to cluster linked urls and ips based on Levenshtien distance (these edges can be shown by toggling "show similarity"). We see clusters of similar urls linked to clusters of similar ips. Similar URLs and IPs seem to cluster, and we can identify central nodes which are most canonical in the set.
-
-"Clusteryness" (the minimum Levenshtien distance needed to create a clustering link) can be tweaked to see different groupings. Number of entries and initial data index can be set.
+The force directed graph allows us to cluster linked urls and ips based on Levenshtien distance (these edges can be shown by toggling "show similarity"). Similar URLs and IPs seem to cluster, and we can identify central nodes which are most canonical in the set. Outliers are also apparant.
 
 Hovering a node reveals its name as a tooltip. This is displayed in the top right along with the linked node's name, as well as the names of near neighbors. With the hovered node's neighbors sorted alphabetically, we see there is a strong corrolation between IP address and URL. This could be quantified by counting resorts (number and distance) need to sort the right side of the table in alphabetical order.
 
-This could also be shown as a matrix, with urls down one axis and ips across the other. Squares corresponding to linked urls and ips would be colored. A perfect ordinality would create a diagonal line. Counting divergences would be another way to determine correlation of urls to ips.
-
+This dataset could also be shown as a matrix, with urls down one axis and ips across the other. Squares corresponding to linked urls and ips would be colored. A perfect ordinality would create a diagonal line. Counting divergences would be another way to determine correlation of urls to ips.

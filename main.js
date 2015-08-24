@@ -31,26 +31,26 @@ var config = {
   "show similarity links" : false
 }
 // gui.add(gui, "showLev");
-var nRecsController = gui.add(config, "# of IPs").min(1).max(50).step(1);
-var startAtController = gui.add(config, "start at").min(0).max(nData-50).step(1);
-var clusterynessController = gui.add(config, "clusteryness").min(0).max(30).step(1);
+//var nRecsController = gui.add(config, "# of IPs").min(1).max(50).step(1);
+//var startAtController = gui.add(config, "start at").min(0).max(nData-50).step(1);
+//var clusterynessController = gui.add(config, "clusteryness").min(0).max(30).step(1);
 var levController = gui.add(config, "show similarity links");
 
-nRecsController.onFinishChange(function(value) {
-  N_ENTRIES = value;
-  parse();
-});
+// nRecsController.onFinishChange(function(value) {
+//   N_ENTRIES = value;
+//   parse();
+// });
 
-startAtController.onFinishChange(function(value) {
-  RANGE_START = value;
-  parse();
-});
+// startAtController.onFinishChange(function(value) {
+//   RANGE_START = value;
+//   parse();
+// });
 
 
-clusterynessController.onFinishChange(function(value) {
-  MIN_LEV = value;
-  parse();
-});
+// clusterynessController.onFinishChange(function(value) {
+//   MIN_LEV = value;
+//   parse();
+// });
 
 
 levController.onFinishChange(function(value) {
