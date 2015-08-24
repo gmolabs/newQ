@@ -1,3 +1,7 @@
+#matrix-container, #force-container {
+	border: "1px solid #ccc";
+}
+
 .node {
 	stroke: #fff;
 	stroke-width: 1.5px;

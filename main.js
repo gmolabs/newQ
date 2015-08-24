@@ -4,7 +4,7 @@ var URL_GROUP = 5;
 var LINK_VALUE = 10;
 var PREV_LINK_VALUE = 3;
 var N_LEV = 2;
-var LEV_STRENGTH_FACTOR = 2;
+var LEV_STRENGTH_FACTOR = 5;
 var MIN_LEV = 5;
 var N_ENTRIES = 50;
 var LEV_LINK_SIZE = 1;
@@ -13,21 +13,45 @@ var RANGE_START = 0;
 // var width = 960,
 //    height = 500;
 
+//filter data
+dns_records = dns_records.filter(typeA);
+nData = dns_records.length;
+
+//for adjacency
+var myNodes;
+
 
 //dat.GUI tho
 var gui = new dat.GUI();
 var config = {
-  "nRecs" : N_ENTRIES,
-  "showLev" : false
+  "# of IPs" : N_ENTRIES,
+  "start at" : RANGE_START,
+  "range" : N_ENTRIES,
+  "clusteryness" : MIN_LEV,
+  "show similarity links" : false
 }
 // gui.add(gui, "showLev");
-var nRecsController = gui.add(config, "nRecs").min(1).max(50).step(1);
-var levController = gui.add(config, "showLev");
+var nRecsController = gui.add(config, "# of IPs").min(1).max(50).step(1);
+var startAtController = gui.add(config, "start at").min(0).max(nData-50).step(1);
+var clusterynessController = gui.add(config, "clusteryness").min(0).max(30).step(1);
+var levController = gui.add(config, "show similarity links");
 
 nRecsController.onFinishChange(function(value) {
   N_ENTRIES = value;
   parse(dns_records);
 });
+
+startAtController.onFinishChange(function(value) {
+  RANGE_START = value;
+  parse(dns_records);
+});
+
+
+clusterynessController.onFinishChange(function(value) {
+  MIN_LEV = value;
+  parse(dns_records);
+});
+
 
 levController.onFinishChange(function(value) {
   if(value) {
@@ -56,7 +80,7 @@ var force = d3.layout.force()
      })
     .size([width, height]);
 
-//use d3 titles
+//use d3 tooltips
 var tip = d3.tip()
   .attr('class', 'd3-tip')
   .offset([-10, 0])
@@ -65,13 +89,20 @@ var tip = d3.tip()
   });
 
 
-var svg = d3.select("body").append("svg")
+var svg = d3.select("#force-container").append("svg")
     .attr("width", width)
     .attr("height", height)
     .call(tip);
 
+
+var svg2 = d3.select("#matrix-container").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+    // .call(tip);
+
 svg.append("g").attr("class", "links");
 svg.append("g").attr("class", "nodes");
+
 
 var dnsNodes,
     ipNodes,
@@ -115,13 +146,24 @@ function typeA(value) {
   return value.type == "A";
 }
 
+function directLinks(value) {
+  return value.type == "direct"
+}
+
+function ipsOnly(value) {
+  return value.group==IP_GROUP;
+}
+
+function urlsOnly(value) {
+  return value.group==URL_GROUP;
+}
+
 //console.log(dns_records);
 
 
 
 function parse() {
   var oldData = parsedData;
-  dns_records = dns_records.filter(typeA);
   existingURLID = null;
   existingIPID = null;
   nEntries = 0;
@@ -147,9 +189,9 @@ function parse() {
         existingURLID="url"+index;
 
       } else {
-        console.log("duplicate url;");
+        //console.log("duplicate url;");
         var oldsize = parsedData.nodes[findNodeIndexByID(existingURLID)].mySize;
-        console.log(parsedData.nodes[findNodeIndexByID(existingURLID)].mySize = newsize = oldsize + NODE_SIZE/2);
+        //console.log(parsedData.nodes[findNodeIndexByID(existingURLID)].mySize = newsize = oldsize + NODE_SIZE/2);
       }
       
       var existingIPID = findIPID(dnsEntry.value);
@@ -160,7 +202,7 @@ function parse() {
                                             ,"mySize": NODE_SIZE});
         existingIPID="ip"+index;
       } else {
-        console.log("duplicate ip");
+        //console.log("duplicate ip");
         var oldsize = parsedData.nodes[findNodeIndexByID(existingIPID)].mySize;
         parsedData.nodes[findNodeIndexByID(existingIPID)].mySize = oldsize + NODE_SIZE/2;
       }
@@ -169,7 +211,8 @@ function parse() {
       parsedData.links.push({"source":findNodeIndexByID(existingURLID)
                             ,"target":findNodeIndexByID(existingIPID)
                             ,"value":LINK_VALUE
-                            ,"linkLength":3});
+                            ,"linkLength":3
+                            ,"type":"direct"});
 
       nEntries++;
     }
@@ -194,14 +237,37 @@ function parse() {
       }
   });
 
+
   start();
 
+}
+
+function compareByName(a, b) {
+  if ( a.name < b.name )
+    return -1;
+  if ( a.name > b.name )
+    return 1;
+  return 0;
 }
 
 
 function start() {
   //graph = parsedData; //loaded js with script tag in index.html
   // console.log(graph);
+
+
+  //do adjacency matrix
+  var myIPs = parsedData.nodes.filter(ipsOnly);
+  myIPs = myIPs.sort(compareByName);
+  console.log(myIPs);
+  var myURLs = parsedData.nodes.filter(urlsOnly);
+  myURLs = myURLs.sort(compareByName);
+  myURLs.reverse();
+  console.log(myURLs);
+  var myLinks = parsedData.links.filter(directLinks);
+
+
+
   
   var link = svg.select(".links").selectAll("line.link")
     .data(parsedData.links);
@@ -247,12 +313,14 @@ function start() {
         timeout = setTimeout(function() {
           tip.show.apply(context, args);
         }, 150);
+        // var otherContext = 
+
       }
     });
 
     node.exit().remove();
 
-    console.log(node);
+    //console.log(node);
 
   //init force
 
