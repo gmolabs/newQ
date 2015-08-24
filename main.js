@@ -191,7 +191,7 @@ function parse() {
       } else {
         //console.log("duplicate url;");
         var oldsize = parsedData.nodes[findNodeIndexByID(existingURLID)].mySize;
-        //console.log(parsedData.nodes[findNodeIndexByID(existingURLID)].mySize = newsize = oldsize + NODE_SIZE/2);
+        parsedData.nodes[findNodeIndexByID(existingURLID)].mySize = newsize = oldsize + NODE_SIZE/2;
       }
       
       var existingIPID = findIPID(dnsEntry.value);
@@ -255,16 +255,16 @@ function start() {
   //graph = parsedData; //loaded js with script tag in index.html
   // console.log(graph);
 
-
+//or don't
   //do adjacency matrix
-  var myIPs = parsedData.nodes.filter(ipsOnly);
-  myIPs = myIPs.sort(compareByName);
-  console.log(myIPs);
-  var myURLs = parsedData.nodes.filter(urlsOnly);
-  myURLs = myURLs.sort(compareByName);
-  myURLs.reverse();
-  console.log(myURLs);
-  var myLinks = parsedData.links.filter(directLinks);
+  // var myIPs = parsedData.nodes.filter(ipsOnly);
+  // myIPs = myIPs.sort(compareByName);
+  // console.log(myIPs);
+  // var myURLs = parsedData.nodes.filter(urlsOnly);
+  // myURLs = myURLs.sort(compareByName);
+  // myURLs.reverse();
+  // console.log(myURLs);
+  // var myLinks = parsedData.links.filter(directLinks);
 
 
 
